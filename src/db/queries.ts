@@ -187,6 +187,13 @@ export async function getVaultedShots(): Promise<ShotRow[]> {
   );
 }
 
+export async function getActiveShotsForCleanup(): Promise<ShotRow[]> {
+  const db = await getDb();
+  return await db.getAllAsync<ShotRow>(
+    `SELECT * FROM shots WHERE gone = 0 AND vaulted = 0 ORDER BY created_at DESC;`
+  );
+}
+
 export async function searchShots(queryText: string, categoryFilter?: CategoryId): Promise<ShotRow[]> {
   const db = await getDb();
   const trimmed = queryText.trim();
