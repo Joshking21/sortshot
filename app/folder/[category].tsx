@@ -19,6 +19,7 @@ import { strings } from '../../src/strings';
 import { CategoryId, EntityRow, ShotRow } from '../../src/db/schema';
 import { getEntitiesForShot, getShotsByCategory, markShotsGone } from '../../src/db/queries';
 import { Button, Card, EmptyState, Sheet, Thumb } from '../../src/ui';
+import { AdBanner } from '../../src/ads/AdBanner';
 
 interface ShotWithEntity {
   shot: ShotRow;
@@ -316,6 +317,9 @@ export default function FolderScreen() {
           contentContainerStyle={styles.gridContent}
         />
       )}
+
+      {/* Non-sensitive Folder Adaptive Banner Ad */}
+      <AdBanner category={category} />
 
       {/* Multi-Select Bottom Sheet */}
       <Sheet

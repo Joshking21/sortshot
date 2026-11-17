@@ -19,6 +19,7 @@ import { useScannerStore } from '../../src/scan/scannerStore';
 import { initScannerLifecycle, runScanner } from '../../src/scan/scanner';
 import { checkPhotoPermission, openSettings, requestPhotoPermission } from '../../src/scan/permissions';
 import { Card, ProgressBar, Thumb } from '../../src/ui';
+import { AdBanner } from '../../src/ads/AdBanner';
 
 interface FolderTileConfig {
   id: CategoryId;
@@ -214,6 +215,11 @@ export default function HomeScreen() {
           />
         </View>
       )}
+
+      {/* Banner Ad (Free Users Only) */}
+      <View style={{ marginTop: theme.spacing[4], alignItems: 'center' }}>
+        <AdBanner />
+      </View>
     </ScrollView>
   );
 }

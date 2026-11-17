@@ -1,32 +1,78 @@
 import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, AppState, AppStateStatus, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import { initDatabase } from '../src/db';
 import { theme } from '../src/theme';
+import { initPurchases } from '../src/pro/pro';
+import { initGoogleAds } from '../src/ads/ads';
+import { useAppLockStore } from '../src/vault/appLock';
+import { Button } from '../src/ui';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const currentTheme = colorScheme === 'dark' ? theme.dark : theme.light;
-  const [dbReady, setDbReady] = useState(false);
+  const [initReady, setInitReady] = useState(false);
+
+  const { isAppLockEnabled, isSessionUnlocked, initAppLock, promptUnlock } = useAppLockStore();
 
   useEffect(() => {
     async function setup() {
       try {
         await initDatabase();
+        await initPurchases();
+        await initGoogleAds();
+        await initAppLock();
       } catch (err) {
-        console.error('Failed to initialize database:', err);
+        console.error('Initialization error:', err);
       } finally {
-        setDbReady(true);
+        setInitReady(true);
       }
     }
     setup();
-  }, []);
 
-  if (!dbReady) {
+    // App lock lifecycle listener
+    const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (nextState === 'background') {
+        const store = useAppLockStore.getState();
+        if (store.isAppLockEnabled) {
+          store.setSessionUnlocked(false);
+        }
+      } else if (nextState === 'active') {
+        const store = useAppLockStore.getState();
+        if (store.isAppLockEnabled && !store.isSessionUnlocked) {
+          store.promptUnlock();
+        }
+      }
+    });
+
+    return () => {
+      sub.remove();
+    };
+  }, [initAppLock]);
+
+  if (!initReady) {
     return (
-      <View style={{ flex: 1, backgroundColor: currentTheme.bg, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={[styles.center, { backgroundColor: currentTheme.bg }]}>
         <ActivityIndicator size="large" color={currentTheme.brand} />
+      </View>
+    );
+  }
+
+  // If App Lock is enabled and current session is locked, show lock screen
+  if (isAppLockEnabled && !isSessionUnlocked) {
+    return (
+      <View style={[styles.center, { backgroundColor: currentTheme.bg }]}>
+        <Text style={styles.lockEmoji}>🔒</Text>
+        <Text style={[styles.lockTitle, { color: currentTheme.ink }]}>Sortshot Locked</Text>
+        <Text style={[styles.lockSubtitle, { color: currentTheme.muted }]}>
+          Authentication required to open Sortshot
+        </Text>
+        <Button
+          title="Unlock with Biometrics"
+          onPress={() => promptUnlock()}
+          style={styles.lockBtn}
+        />
       </View>
     );
   }
@@ -55,3 +101,29 @@ export default function RootLayout() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  lockEmoji: {
+    fontSize: 54,
+    marginBottom: 16,
+  },
+  lockTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  lockSubtitle: {
+    fontSize: 15,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  lockBtn: {
+    minWidth: 220,
+  },
+});

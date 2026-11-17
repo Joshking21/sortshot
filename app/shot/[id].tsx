@@ -21,6 +21,8 @@ import { theme } from '../../src/theme';
 import { strings } from '../../src/strings';
 import { CategoryId, EntityRow, ShotRow } from '../../src/db/schema';
 import { getEntitiesForShot, getShotById, markShotsGone, updateShotCategory } from '../../src/db/queries';
+import { moveScreenshotToVault } from '../../src/vault/vault';
+import { useProStore } from '../../src/pro/pro';
 import { ActionCard, Button, Chip } from '../../src/ui';
 
 const ALL_CATEGORIES: CategoryId[] = [
@@ -185,6 +187,36 @@ export default function ShotScreen() {
         },
       },
     ]);
+  };
+
+  const handleMoveToVault = async () => {
+    if (!shot) return;
+    const isPro = useProStore.getState().isPro;
+    if (!isPro) {
+      router.push('/pro');
+      return;
+    }
+
+    Alert.alert(
+      strings.shot.moveToVault,
+      strings.vault.warning,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Move',
+          onPress: async () => {
+            const success = await moveScreenshotToVault(shot);
+            if (success) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              showToast(strings.shot.vaultedToast);
+              router.back();
+            } else {
+              Alert.alert('Error', 'Failed to move screenshot to vault.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleShare = async () => {
@@ -362,8 +394,14 @@ export default function ShotScreen() {
         {/* Bottom Action Bar */}
         <View style={styles.actionRow}>
           <Button
-            title={strings.shot.share}
+            title={strings.shot.moveToVault}
             variant="secondary"
+            onPress={handleMoveToVault}
+            style={styles.flexBtn}
+          />
+          <Button
+            title={strings.shot.share}
+            variant="ghost"
             onPress={handleShare}
             style={styles.flexBtn}
           />
