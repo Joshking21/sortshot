@@ -128,6 +128,8 @@ export default function HomeScreen() {
       <View style={styles.searchSection}>
         <Pressable
           onPress={() => router.push('/search')}
+          accessibilityRole="search"
+          accessibilityLabel={strings.home.searchPlaceholder}
           style={[styles.searchBar, { backgroundColor: currentTheme.card, borderColor: currentTheme.line }]}
         >
           <Text style={styles.searchIcon}>🔍</Text>
@@ -166,6 +168,8 @@ export default function HomeScreen() {
             <Pressable
               key={tile.id}
               onPress={() => router.push(`/folder/${tile.id}`)}
+              accessibilityRole="button"
+              accessibilityLabel={`${tile.name}, ${count} screenshots`}
               style={({ pressed }) => [
                 styles.tile,
                 {

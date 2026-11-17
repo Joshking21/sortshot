@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, AppState, AppStateStatus, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import { initDatabase } from '../src/db';
+import { getSetting } from '../src/db/queries';
 import { theme } from '../src/theme';
 import { initPurchases } from '../src/pro/pro';
 import { initGoogleAds } from '../src/ads/ads';
@@ -10,6 +11,7 @@ import { useAppLockStore } from '../src/vault/appLock';
 import { Button } from '../src/ui';
 
 export default function RootLayout() {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const currentTheme = colorScheme === 'dark' ? theme.dark : theme.light;
   const [initReady, setInitReady] = useState(false);
@@ -23,6 +25,13 @@ export default function RootLayout() {
         await initPurchases();
         await initGoogleAds();
         await initAppLock();
+
+        const onboarded = await getSetting('onboarding_completed');
+        if (onboarded !== 'true') {
+          setTimeout(() => {
+            router.replace('/onboarding/welcome');
+          }, 50);
+        }
       } catch (err) {
         console.error('Initialization error:', err);
       } finally {
